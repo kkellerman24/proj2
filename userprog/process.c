@@ -45,7 +45,7 @@ process_execute (const char *file_name)
   //NEW CODE
   // Get file name
   char *save_ptr;
-  file_name = strtok_r((char *)file_name, " ", &saveptr);
+  file_name = strtok_r((char *)file_name, " ", &save_ptr);
   //END NEW CODE
 
   /* Create a new thread to execute FILE_NAME. */
