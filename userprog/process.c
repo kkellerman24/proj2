@@ -583,7 +583,7 @@ setup_stack (void **esp, const char* file_name, char** save_ptr)
   free(argv);
 
   // Use for debugging, but delete later
-  hex_dump(0, *esp, (int) ((size_t) PHYS_BASE - (size_t) *esp), true);
+  //hex_dump(0, *esp, (int) ((size_t) PHYS_BASE - (size_t) *esp), true);
 
   return success;
   //END NEW CODE
