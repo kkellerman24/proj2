@@ -145,7 +145,7 @@ void exit (int status)
 {
   struct thread *cur = thread_current();
   bool parent_alive = thread_alive(cur->parent);
-  if (parent_alive && cur->cp->wait) {
+  if (thread_alive(cur->parent)) {
     cur->cp->status = status;
   }
   printf ("%s: exit(%d)\n", cur->name, status);
