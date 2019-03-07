@@ -22,7 +22,8 @@ struct child_process {
   struct list_elem elem;  //list_elem for iteration
 };
 struct child_process* get_child_process(int pid);
-void remove_child_process(int pid);
+void remove_child_process(struct child_process *cp);
+void remove_child_processes(void);
 /***********************/
 void process_close_file(int fd);  /* passes the file number of the file to be closed */ 
 // END NEW CODE

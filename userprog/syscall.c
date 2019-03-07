@@ -143,15 +143,12 @@ void halt (void)
 /* Calls thread_exit from threads/thread.c to destroy the current thread. */
 void exit (int status)
 {
-  struct thread *parent = thread_current()->parent;
-  if (NULL != parent) {
-    struct child_process *cp = get_child_process(thread_current()->tid);
-    if (cp->wait) {
-      cp->status = status;
-      //release wait lock
-    }
+  struct thread *cur = thread_current();
+  bool parent_alive = thread_alive(cur->parent);
+  if (parent_alive && cur->cp->wait) {
+    cur->cp->status = status;
   }
-  printf ("%s: exit(%d)\n", thread_current()->name, status);
+  printf ("%s: exit(%d)\n", cur->name, status);
   thread_exit();
 }
 
@@ -166,7 +163,7 @@ pid_t exec (const char *cmd_line)
     return ERROR;   //if pid was not in the child list, return error
   }
   while (cp->load == NOT_LOADED) {
-    //block thread
+    barrier();
   }
   if (cp->load == LOAD_FAIL) {
     return ERROR;     //if child process fails to load, return error
@@ -402,5 +399,53 @@ void process_close_file (int fd)
     cur_elem = next_elem;
   }
   return;
+}
+
+/* Creates a new child process and adds it to the back of the currrent
+   thread's child list. Returns the new process. */
+struct child_process* add_child_process(int pid) {
+  struct child_process *cp = malloc(sizeof(struct child_process));
+  cp->pid = pid;
+  cp->load = NOT_LOADED;
+  cp->wait = false;
+  cp->exit = false;
+  lock_init(&cp->wait_lock);
+  list_push_back(&thread_current()->child_list, &cp->elem);
+  return cp;
+}
+
+/* Looks for a process in the current thread's child list with the 
+   corresponding pid. Returns the child process if found, otherwise
+   returns NULL. */
+struct child_process* get_child_process(int pid) {
+  struct thread *cur = thread_current();
+  struct list_elem *child_elem;
+  for (child_elem = list_begin(&t->child_list); child_elem != list_end(&t->child_list); child_elem = list_next(&t->child_list)) {
+    struct child_process *cp = list_entry(child_elem, struct child_process, elem);
+    if (pid == cp->pid) {
+      return cp;
+    }
+  }
+  return NULL;  //if we can't find the child process in the list
+}
+
+/* Removes the child process from the child list, and frees up
+   the space it took up. */
+void remove_child_process(struct child_process *cp) {
+  list_remove(&cp->elem);
+  free(cp);
+}
+
+/* Removes all child processes*/
+void remove_child_processes() {
+  struct thread *cur_thread = thread_current();
+  struct list_elem *next_elem, *cur_elem;
+  cur_elem = list_begin(&t->child_list);
+  while (cur_elem != list_end(&t->child_list)) {
+    next_elem = list_next(cur_elem);
+    struct process *cp = list_entry(cur_elem, struct child_process, elem);
+    remove_child_process(cp);
+    cur_elem = next_elem;
+  }
 }
 // END NEW CODE
