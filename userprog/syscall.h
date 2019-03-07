@@ -2,6 +2,7 @@
 #define USERPROG_SYSCALL_H
 
 // NEW CODE
+#include "threads/synch.h" //needed for the lock
 // Needed by process.c to return errors for child processes
 #define ERROR -1    /* Error code is -1 for any system calls that can fail */
 // Needed by process.c to close files before termination
