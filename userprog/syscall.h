@@ -8,9 +8,9 @@
 // Needed by process.c to close files before termination
 #define CLOSE_ALL -1              /* pass -1 to close all files opened by process */
 /* Child Process Setup */
-#define NOT_LOADED = 0
-#define LOAD_SUCCESS = 1
-#define LOAD_FAIL = -1
+#define NOT_LOADED 0
+#define LOAD_SUCCESS 1
+#define LOAD_FAIL -1
 //Child Process Structure
 struct child_process {
   int pid;    //parent id
