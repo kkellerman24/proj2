@@ -16,7 +16,6 @@
 #include "userprog/process.h"
 
 #define ARG_MAX 4		/* Maximum number of arguments to pass to a system call */
-#define ERROR -1    /* Error code is -1 for any system calls that can fail */
 struct lock file_lock;  /* Lock that prevents multiple files in same file directory from being manipulated at once. */
 // Struct to hold a file, its file descriptor and a list_elem for iteration
 struct process_file {
@@ -144,6 +143,14 @@ void halt (void)
 /* Calls thread_exit from threads/thread.c to destroy the current thread. */
 void exit (int status)
 {
+  struct thread *parent = thread_exists(thread_current()->parent);
+  if (NULL != parent) {
+    struct child_process *cp = get_child_process(thread_current()->tid);
+    if (cp->wait) {
+      cp->status = status;
+      //release wait lock
+    }
+  }
   printf ("%s: exit(%d)\n", thread_current()->name, status);
   thread_exit();
 }
@@ -154,8 +161,16 @@ void exit (int status)
 pid_t exec (const char *cmd_line)
 {
   pid_t pid = process_execute(cmd_line);
-  // Wait for pid to complete load here
-  // If not successful, return -1
+  struct child_process *cp = get_child_process(pid);
+  if (NULL == cp) {
+    return ERROR;   //if pid was not in the child list, return error
+  }
+  while (cp->load == NOT_LOADED) {
+    //block thread
+  }
+  if (cp->load == LOAD_FAIL) {
+    return ERROR;     //if child process fails to load, return error
+  }
   return pid;
 }
 
