@@ -51,8 +51,8 @@ syscall_handler (struct intr_frame *f UNUSED)
      END OLD CODE */
 
   // NEW CODE
-  int i, arg[MAX_ARGS]; //declare variables used by handler
-  for (i = 0; i < MAX_ARGS; i++)
+  int i, arg[ARG_MAX]; //declare variables used by handler
+  for (i = 0; i < ARG_MAX; i++)
   {
     arg[i] = *((int *)f->esp + i);  //add arguments to the arg array
   }
@@ -329,7 +329,7 @@ int user_to_kernel_ptr(const void *vaddr)
 	  return 0;
 	}
   void *ptr = pagedir_get_page(thread_current()->pagedir, vaddr);   //Otherwise, get the pointer to the kernal virtual address for current thread
-  if (!ptr)   //if we get a null pointer due to vaddr being unmapped, exit the thread
+  if (NULL == ptr)   //if we get a null pointer due to vaddr being unmapped, exit the thread
 	{
 	  thread_exit();
 	  return 0;
@@ -345,8 +345,8 @@ int process_add_file (struct file *f)
 {
   struct process_file *pf = malloc(sizeof(struct process_file));
   pf->file = f;
-  pf->fd = thread_current()->fd;
-  thread_current()->fd++;
+  pf->fd = thread_current()->max_fd;
+  thread_current()->max_fd++;
   list_push_back(&thread_current()->files, &pf->elem);
   return pf->fd;
 }
@@ -357,7 +357,7 @@ struct file* process_get_file (int fd)
 {
   struct thread *cur = thread_current();
   struct list_elem *file_elem;
-  for (file_elem = list_begin(&cur->files); file_elem != list_end(&cur->files); file_elem = list_next(e)) {
+  for (file_elem = list_begin(&cur->files); file_elem != list_end(&cur->files); file_elem = list_next(file_elem)) {
     struct process_file *pf = list_entry(file_elem, struct process_file, elem);
     if (fd == pf->fd) {
       return pf->file;

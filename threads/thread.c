@@ -503,7 +503,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->wait_lock = NULL;
   /* initializing file system members */
   list_init(&t->files);
-  t->fd = STARTING_FD;
+  t->max_fd = STARTING_FD;
   // END NEW CODE
 }
 

@@ -100,7 +100,7 @@ struct thread
 
 	/*********************** File System *************************/
 	struct list files;		   /* list of files used by the thread */
-	int fd;				/* current max file descriptor from list files */
+	int max_fd;		/* current max file descriptor from list files */
   /*************************************************************/
 	// END NEW CODE
 	
