@@ -143,7 +143,7 @@ void halt (void)
 /* Calls thread_exit from threads/thread.c to destroy the current thread. */
 void exit (int status)
 {
-  struct thread *parent = thread_exists(thread_current()->parent);
+  struct thread *parent = thread_current()->parent;
   if (NULL != parent) {
     struct child_process *cp = get_child_process(thread_current()->tid);
     if (cp->wait) {
