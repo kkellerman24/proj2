@@ -62,6 +62,9 @@ static unsigned thread_ticks;   /* # of timer ticks since last yield. */
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
 
+/* File System */
+#define STARTING_FD 2				/* Starting file descriptor number */ //WHY IS THIS 2?????
+
 static void kernel_thread (thread_func *, void *aux);
 
 static void idle (void *aux UNUSED);
@@ -498,6 +501,9 @@ init_thread (struct thread *t, const char *name, int priority)
   list_init(&t->donors_list);
   t->old_priority = priority;
   t->wait_lock = NULL;
+  /* initializing file system members */
+  list_init(&t->files);
+  t->fd = STARTING_FD;
   // END NEW CODE
 }
 

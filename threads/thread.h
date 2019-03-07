@@ -94,9 +94,14 @@ struct thread
 	/********************** Priority Scheduling *******************/
 	int    old_priority;					/* To restore priority to the old form after a donation */
 	struct lock * wait_lock;			/* Determine the lock the thread is waiting for */
-    struct list donors_list; 			/* list of possible donor threads */
-    struct list_elem donor_elem; 		/* list element to add to donors list of the thread which it is donating priority to */
+  struct list donors_list; 			/* list of possible donor threads */
+  struct list_elem donor_elem; 		/* list element to add to donors list of the thread which it is donating priority to */
 	/*************************************************************/
+
+	/*********************** File System *************************/
+	struct list files;		   /* list of files used by the thread */
+	int fd;				/* current max file descriptor from list files */
+  /*************************************************************/
 	// END NEW CODE
 	
     /* Shared between thread.c and synch.c. */

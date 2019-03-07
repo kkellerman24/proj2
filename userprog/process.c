@@ -11,6 +11,9 @@
 #include "filesys/directory.h"
 #include "filesys/file.h"
 #include "filesys/filesys.h"
+// NEW CODE
+#include "userprog/syscall.h" //necessary to close opened files
+// END NEW CODE
 #include "threads/flags.h"
 #include "threads/init.h"
 #include "threads/interrupt.h"
@@ -133,6 +136,10 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+
+  // NEW CODE
+  process_close_file(CLOSE_ALL);		/* Closes all files opened by the process */
+  // END NEW CODE
 }
 
 /* Sets up the CPU for running user code in the current
@@ -497,7 +504,7 @@ setup_stack (void **esp, const char* file_name, char** save_ptr)
   int argv_size = DEFAULT_ARGV; //argv size set to 2
 
   // Push args onto stack
-  /* Iterate through file name til no more tokens are present, strtok_r allows for re-entry to tokenizing location */
+  /* Iterate through file name until no more tokens are present, strtok_r allows for re-entry to tokenizing location */
   for (token = (char *)file_name; token != NULL; token = strtok_r(NULL, " ", save_ptr))
   {
     *esp -= strlen(token) + 1;
@@ -514,9 +521,9 @@ setup_stack (void **esp, const char* file_name, char** save_ptr)
     memcpy(*esp, token, strlen(token) + 1);
   } /* end for loop iterating through arguments */
   argv[argc] = 0;
-  /* Word allighn to 4 bytes, write the word align */
+  /* Word align to 4 bytes, write the word align */
   i = (size_t)*esp % WORD_SIZE;
-  if (i)
+  if (i > 0)
   {
     *esp -= i; //?????
     memcpy(*esp, &argv[argc], i);
