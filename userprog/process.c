@@ -84,11 +84,11 @@ start_process (void *file_name_)
    
   if (success)
     {
-      // load is LOAD_SUCCESS
+      thread_current()->cp->load = LOAD_SUCCESS;// load is LOAD_SUCCESS
     }
   else
     {
-      // load is LOAD_FAIL
+      thread_current()->cp->load = LOAD_FAIL;// load is LOAD_FAIL
     }
   // Unblock parent thread if already blocked
   //END NEW CODE
@@ -130,12 +130,14 @@ process_wait (tid_t child_tid UNUSED)
     {
       return ERROR;
     }
+  cp->wait = true;
   while (!cp->exit)
     {
-      lock_acquire(&cp->wait_lock);
+      barrier();//lock_acquire(&cp->wait_lock);
     }
   int status = cp->status;
-  remove_child_process(child_tid);
+  //remove_child_process(child_tid);
+  remove_child_process(cp);
   return status;
 }
 
@@ -168,6 +170,10 @@ process_exit (void)
   
   // Free child list
   remove_child_process(CLOSE_ALL);
+  if (thread_alive(cur->parent)) /* check to see if the current threads parent is alive, if it is, the current thread needs to stay alive */
+    {
+      cur->cp->exit = true; /* Set exit value to true in case the current thread is killed by the kernel */
+    }
   // END NEW CODE
 }
 

@@ -66,6 +66,7 @@ bool thread_mlfqs;
 
 /* File System */
 #define STARTING_FD 2				/* Starting file descriptor number */ //WHY IS THIS 2?????
+#define NO_PARENT -1				/* Error value stored for an orphan thread */
 
 static void kernel_thread (thread_func *, void *aux);
 
@@ -212,13 +213,15 @@ thread_create (const char *name, int priority,
   
   // NEW CODE
   // Add child process to child list
+  t->parent = thread_tid(); /* pass thread id */
   struct child_process* cp = malloc(sizeof(struct child_process));
-  cp->pid = t->tid;
-  cp->load = NOT_LOADED;
-  cp->wait = false;
-  cp->exit = false;
-  lock_init(&cp->wait_lock);
-  list_push_back(&thread_current()->child_list, &cp->elem);
+  t->cp = cp;
+  //cp->pid = t->tid;
+  //cp->load = NOT_LOADED;
+  //cp->wait = false;
+  //cp->exit = false;
+  //lock_init(&cp->wait_lock);
+  //list_push_back(&thread_current()->child_list, &cp->elem);
   // END NEW CODE
   intr_set_level(old_level);
 
@@ -519,7 +522,9 @@ init_thread (struct thread *t, const char *name, int priority)
   
   /* adding support for wait/execute */
   list_init(&t->child_list);
-  t->parent = thread_current()->tid;
+  //t->parent = thread_current()->tid;
+  t->cp = NULL;
+  t->parent = NO_PARENT;
   // END NEW CODE
 }
 
@@ -711,6 +716,22 @@ void check_priority(void)
   struct thread *head = list_entry(list_front(&ready_list), struct thread, elem);
   if(thread_current()->priority < head->priority)
 	thread_yield();
+}
+
+/* Inspired by RyanTim Wilson, helper function to see if a thread has been terminated */
+bool thread_alive (int pid)
+{
+  struct list_elem *e; /* element used to iterate */
+
+  for (e = list_begin (&all_list); e != list_end (&all_list); e = list_next (e))
+    {
+      struct thread *t = list_entry (e, struct thread, allelem);
+      if (t->tid == pid) /* if the thread id is equal to the process id, a thread is alive */
+		{
+	  return true;
+		}
+    }
+  return false;
 }
 // END NEW CODE
 
