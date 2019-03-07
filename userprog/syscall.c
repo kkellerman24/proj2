@@ -440,8 +440,8 @@ void remove_child_process(struct child_process *cp) {
 void remove_child_processes() {
   struct thread *cur_thread = thread_current();
   struct list_elem *next_elem, *cur_elem;
-  cur_elem = list_begin(&t->child_list);
-  while (cur_elem != list_end(&t->child_list)) {
+  cur_elem = list_begin(&cur_thread->child_list);
+  while (cur_elem != list_end(&cur_thread->child_list)) {
     next_elem = list_next(cur_elem);
     struct process *cp = list_entry(cur_elem, struct child_process, elem);
     remove_child_process(cp);
