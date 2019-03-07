@@ -7,12 +7,14 @@
 #include "threads/flags.h"
 #include "threads/interrupt.h"
 #include "threads/intr-stubs.h"
+#include "threads/malloc.h" //added for wait/execute
 #include "threads/palloc.h"
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
 #ifdef USERPROG
 #include "userprog/process.h"
+#include "userprog/syscall.h"
 #endif
 
 /* Random value for struct thread's `magic' member.
@@ -205,8 +207,18 @@ thread_create (const char *name, int priority,
   
   
   enum intr_level old_level = intr_disable();
-  // NEW CODE
+  
   check_priority(); /* check to see if the newly created thread's priority is less than that of the highest priority thread in ready list */
+  
+  // NEW CODE
+  // Add child process to child list
+  struct child_process* cp = malloc(sizeof(struct child_process));
+  cp->pid = t->tid;
+  cp->load = NOT_LOADED;
+  cp->wait = false;
+  cp->exit = false;
+  lock_init(&cp->wait_lock);
+  list_push_back(&thread_current()->child_list, &cp->elem);
   // END NEW CODE
   intr_set_level(old_level);
 
@@ -504,6 +516,10 @@ init_thread (struct thread *t, const char *name, int priority)
   /* initializing file system members */
   list_init(&t->files);
   t->max_fd = STARTING_FD;
+  
+  /* adding support for wait/execute */
+  list_init(&t->child_list);
+  t->parent = thread_current()->tid;
   // END NEW CODE
 }
 

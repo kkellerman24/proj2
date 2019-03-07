@@ -81,6 +81,16 @@ start_process (void *file_name_)
   //success = load (file_name, &if_.eip, &if_.esp);
   //NEW CODE
    success = load (file_name, &if_.eip, &if_.esp, &save_ptr);
+   
+  if (success)
+    {
+      // load is LOAD_SUCCESS
+    }
+  else
+    {
+      // load is LOAD_FAIL
+    }
+  // Unblock parent thread if already blocked
   //END NEW CODE
 
   /* If load failed, quit. */
@@ -110,7 +120,23 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  return -1;
+  //return -1;
+  struct child_process* cp = get_child_process(child_tid);
+  if (!cp) /* If we don't have a child process, an error is present */
+    {
+      return ERROR;
+    }
+  if (cp->wait) /* If the child process struct boolean wait is true, we can't return to exit status */
+    {
+      return ERROR;
+    }
+  while (!cp->exit)
+    {
+      lock_acquire(&cp->wait_lock);
+    }
+  int status = cp->status;
+  remove_child_process(child_tid);
+  return status;
 }
 
 /* Free the current process's resources. */
@@ -139,6 +165,9 @@ process_exit (void)
 
   // NEW CODE
   process_close_file(CLOSE_ALL);		/* Closes all files opened by the process */
+  
+  // Free child list
+  remove_child_process(CLOSE_ALL);
   // END NEW CODE
 }
 

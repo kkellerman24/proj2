@@ -101,6 +101,10 @@ struct thread
 	/*********************** File System *************************/
 	struct list files;		   /* list of files used by the thread */
 	int max_fd;		/* current max file descriptor from list files */
+	
+	/* For wait and execute system calls */
+	struct list child_list;
+    tid_t parent;
   /*************************************************************/
 	// END NEW CODE
 	
