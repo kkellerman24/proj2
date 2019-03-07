@@ -105,6 +105,9 @@ struct thread
 	/* For wait and execute system calls */
 	struct list child_list;
     tid_t parent;
+	
+	/* Pointer for child process */
+    struct child_process* cp;
   /*************************************************************/
 	// END NEW CODE
 	
@@ -156,7 +159,7 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
-// NEW CODE
+
 /* Prototypes for functions that help order our sleeping threads by wake time */
 bool is_greater_priority (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
 bool is_less_wake_time (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
@@ -164,7 +167,9 @@ bool is_less_wake_time (const struct list_elem *a, const struct list_elem *b, vo
 void update_priority (void);
 void donate_priority (void);
 void check_priority (void);
-// END NEW CODE
+
+/* System call helper function */
+bool thread_alive (int pid);
 
 
 #endif /* threads/thread.h */
