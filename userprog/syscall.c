@@ -75,7 +75,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     }
     case SYS_WAIT:
     {
-      f->eax = process_wait(arg[1]);                               //passes the pid into process_wait() in process.c
+      f->eax = wait(arg[1]);                                       //passes the pid into wait()
       break;
     }
     case SYS_CREATE:
@@ -169,6 +169,11 @@ pid_t exec (const char *cmd_line)
     return ERROR;     //if child process fails to load, return error
   }
   return pid;
+}
+
+int wait (pid_t pid)
+{
+  return process_wait(pid);
 }
 
 /* Creates a new file called "file" using filesys_create from
@@ -415,7 +420,7 @@ struct child_process* add_child_process(int pid) {
 struct child_process* get_child_process(int pid) {
   struct thread *cur = thread_current();
   struct list_elem *child_elem;
-  for (child_elem = list_begin(&t->child_list); child_elem != list_end(&t->child_list); child_elem = list_next(&t->child_list)) {
+  for (child_elem = list_begin(&cur->child_list); child_elem != list_end(&cur->child_list); child_elem = list_next(&cur->child_list)) {
     struct child_process *cp = list_entry(child_elem, struct child_process, elem);
     if (pid == cp->pid) {
       return cp;
