@@ -215,13 +215,15 @@ thread_create (const char *name, int priority,
   
   enum intr_level old_level = intr_disable();
   
-  check_priority(); /* check to see if the newly created thread's priority is less than that of the highest priority thread in ready list */
-  
   // NEW CODE
   // Add child process to child list
   t->parent = thread_tid(); /* pass thread id */
   struct child_process* cp = malloc(sizeof(struct child_process));
   t->cp = cp;
+  
+  check_priority(); /* check to see if the newly created thread's priority is less than that of the highest priority thread in ready list */
+  
+  
   //cp->pid = t->tid;
   //cp->load = NOT_LOADED;
   //cp->wait = false;
