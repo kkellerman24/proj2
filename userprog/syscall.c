@@ -145,7 +145,7 @@ void exit (int status)
 {
   struct thread *cur = thread_current();
   bool parent_alive = thread_alive(cur->parent);
-  if (thread_alive(cur->parent)) {
+  if (parent_alive) {
     cur->cp->status = status;
   }
   printf ("%s: exit(%d)\n", cur->name, status);
@@ -421,7 +421,7 @@ struct child_process* add_child_process(int pid) {
 struct child_process* get_child_process(int pid) {
   struct thread *cur = thread_current();
   struct list_elem *child_elem;
-  for (child_elem = list_begin(&cur->child_list); child_elem != list_end(&cur->child_list); child_elem = list_next(&cur->child_list)) {
+  for (child_elem = list_begin(&cur->child_list); child_elem != list_end(&cur->child_list); child_elem = list_next(child_elem)) {
     struct child_process *cp = list_entry(child_elem, struct child_process, elem);
     if (pid == cp->pid) {
       return cp;
