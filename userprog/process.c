@@ -18,6 +18,9 @@
 #include "threads/init.h"
 #include "threads/interrupt.h"
 #include "threads/palloc.h"
+// NEW CODE ?
+#include "threads/malloc.h"
+// END NEW CODE ?
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
@@ -169,7 +172,7 @@ process_exit (void)
   process_close_file(CLOSE_ALL);		/* Closes all files opened by the process */
   
   // Free child list
-  remove_child_process(CLOSE_ALL);
+  remove_child_processes();
   if (thread_alive(cur->parent)) /* check to see if the current threads parent is alive, if it is, the current thread needs to stay alive */
     {
       cur->cp->exit = true; /* Set exit value to true in case the current thread is killed by the kernel */
