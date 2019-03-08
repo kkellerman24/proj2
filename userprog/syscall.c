@@ -204,7 +204,7 @@ int open (const char *file)
 {
   lock_acquire(&file_lock);
   struct file *f = filesys_open(file);
-  if (NULL == f) {
+  if (!f) {
     lock_release(&file_lock);
     return ERROR;
   }
@@ -220,7 +220,7 @@ int filesize (int fd)
 {
   lock_acquire(&file_lock);
   struct file *f = process_get_file(fd);
-  if (NULL == f) {
+  if (!f) {
     lock_release(&file_lock);
     return ERROR;
   }
@@ -248,7 +248,7 @@ int read (int fd, void *buffer, unsigned size)
 	}
   lock_acquire(&file_lock);
   struct file *f = process_get_file(fd);
-  if (NULL == f) {
+  if (!f) {
     lock_release(&file_lock);
     return ERROR;
   }
@@ -271,7 +271,7 @@ int write (int fd, const void *buffer, unsigned size)
 	}
   lock_acquire(&file_lock);
   struct file *f = process_get_file(fd);
-  if (NULL == f) {
+  if (!f) {
     lock_release(&file_lock);
     return ERROR;
   }
@@ -286,11 +286,11 @@ int write (int fd, const void *buffer, unsigned size)
    file_seek from filesys/file.c. */
 void seek (int fd, unsigned position)
 {
-  lock_release(&file_lock);
+  lock_acquire(&file_lock);
   struct file *f = process_get_file(fd);
-  if (NULL == f) {
+  if (!f) {
     lock_release(&file_lock);
-    return ERROR;
+    return;
   }
   file_seek(f, position);
   lock_release(&file_lock);
@@ -303,9 +303,9 @@ void seek (int fd, unsigned position)
    then file_tell from filesys/file.c. */
 unsigned tell (int fd)
 {
-  lock_release(&file_lock);
+  lock_acquire(&file_lock);
   struct file *f = process_get_file(fd);
-  if (NULL == f) {
+  if (!f) {
     lock_release(&file_lock);
     return ERROR;
   }
@@ -319,12 +319,12 @@ unsigned tell (int fd)
    filesys/file, and finally process_close_file. */
 void close (int fd)
 {
-  lock_release(&file_lock);
-  struct file *f = process_get_file(fd);
+  lock_acquire(&file_lock);
+  /*struct file *f = process_get_file(fd);
   if (NULL == f) {
     lock_release(&file_lock);
     return ERROR;
-  }
+  } */
   process_close_file(fd);
   lock_release(&file_lock);
 }
@@ -341,7 +341,7 @@ int user_to_kernel_ptr(const void *vaddr)
 	  return 0;
 	}
   void *ptr = pagedir_get_page(thread_current()->pagedir, vaddr);   //Otherwise, get the pointer to the kernal virtual address for current thread
-  if (NULL == ptr)   //if we get a null pointer due to vaddr being unmapped, exit the thread
+  if (!ptr)   //if we get a null pointer due to vaddr being unmapped, exit the thread
 	{
 	  thread_exit();
 	  return 0;
@@ -384,8 +384,7 @@ struct file* process_get_file (int fd)
 void process_close_file (int fd)
 {
   struct thread *cur_thread = thread_current();
-  struct list_elem *cur_elem, *next_elem;
-  cur_elem = list_begin(&cur_thread->files);
+  struct list_elem *cur_elem, *next_elem = list_begin(&cur_thread->files);
   while (cur_elem != list_end(&cur_thread->files)) {
     next_elem = list_next(cur_elem);
     struct process_file *pf = list_entry(cur_elem, struct process_file, elem);
@@ -418,14 +417,17 @@ struct child_process* add_child_process(int pid) {
 /* Looks for a process in the current thread's child list with the 
    corresponding pid. Returns the child process if found, otherwise
    returns NULL. */
-struct child_process* get_child_process(int pid) {
+struct child_process* get_child_process(int pid)
+ {
   struct thread *cur = thread_current();
   struct list_elem *child_elem;
-  for (child_elem = list_begin(&cur->child_list); child_elem != list_end(&cur->child_list); child_elem = list_next(child_elem)) {
+  for (child_elem = list_begin(&cur->child_list); child_elem != list_end(&cur->child_list); child_elem = list_next(child_elem)) 
+  {
     struct child_process *cp = list_entry(child_elem, struct child_process, elem);
-    if (pid == cp->pid) {
+    if (pid == cp->pid) 
+	{
       return cp;
-    }
+	}
   }
   return NULL;  //if we can't find the child process in the list
 }
@@ -440,12 +442,12 @@ void remove_child_process(struct child_process *cp) {
 /* Removes all child processes*/
 void remove_child_processes() {
   struct thread *cur_thread = thread_current();
-  struct list_elem *next_elem, *cur_elem;
-  cur_elem = list_begin(&cur_thread->child_list);
+  struct list_elem *next_elem, *cur_elem = list_begin(&cur_thread->child_list);
   while (cur_elem != list_end(&cur_thread->child_list)) {
     next_elem = list_next(cur_elem);
     struct child_process *cp = list_entry(cur_elem, struct child_process, elem);
-    remove_child_process(cp);
+    list_remove(&cp->elem);//remove_child_process(cp);
+	free(cp);
     cur_elem = next_elem;
   }
 }
