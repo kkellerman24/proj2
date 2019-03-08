@@ -722,6 +722,13 @@ void check_priority(void)
   if(list_empty(&ready_list))
 	  return;
   struct thread *head = list_entry(list_front(&ready_list), struct thread, elem);
+  if (intr_context())
+  {
+	  thread_ticks++;
+	  if (thread_current()->priority < head->priority || (thread_ticks >= TIME_SLICE && thread_current()->priority == head->priority))
+		  intr_yield_on_return();
+	  return;
+  }
   if(thread_current()->priority < head->priority)
 	thread_yield();
 }
