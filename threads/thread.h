@@ -25,11 +25,13 @@ typedef int tid_t;
 #define PRI_MAX 63                      /* Highest priority. */
 
 /* A kernel thread or user process.
+
    Each thread structure is stored in its own 4 kB page.  The
    thread structure itself sits at the very bottom of the page
    (at offset 0).  The rest of the page is reserved for the
    thread's kernel stack, which grows downward from the top of
    the page (at offset 4 kB).  Here's an illustration:
+
         4 kB +---------------------------------+
              |          kernel stack           |
              |                |                |
@@ -51,18 +53,22 @@ typedef int tid_t;
              |               name              |
              |              status             |
         0 kB +---------------------------------+
+
    The upshot of this is twofold:
+
       1. First, `struct thread' must not be allowed to grow too
          big.  If it does, then there will not be enough room for
          the kernel stack.  Our base `struct thread' is only a
          few bytes in size.  It probably should stay well under 1
          kB.
+
       2. Second, kernel stacks must not be allowed to grow too
          large.  If a stack overflows, it will corrupt the thread
          state.  Thus, kernel functions should not allocate large
          structures or arrays as non-static local variables.  Use
          dynamic allocation with malloc() or palloc_get_page()
          instead.
+
    The first symptom of either of these problems will probably be
    an assertion failure in thread_current(), which checks that
    the `magic' member of the running thread's `struct thread' is
@@ -83,34 +89,7 @@ struct thread
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
-	
-	
-	
-	// NEW CODE
-	/********************** Alarm clock ***************************/
-	int64_t wake_time;					/* keeps track of time, based on ticks, till the thread should be awoken */
-	/**************************************************************/
-	
-	/********************** Priority Scheduling *******************/
-	int    old_priority;					/* To restore priority to the old form after a donation */
-	struct lock * wait_lock;			/* Determine the lock the thread is waiting for */
-  struct list donors_list; 			/* list of possible donor threads */
-  struct list_elem donor_elem; 		/* list element to add to donors list of the thread which it is donating priority to */
-	/*************************************************************/
 
-	/*********************** File System *************************/
-	struct list files;		   /* list of files used by the thread */
-	int max_fd;		/* current max file descriptor from list files */
-	
-	/* For wait and execute system calls */
-	struct list child_list;
-    tid_t parent;
-	
-	/* Pointer for child process */
-    struct child_process* cp;
-  /*************************************************************/
-	// END NEW CODE
-	
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
@@ -121,7 +100,22 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
+	
+	/*********************** File System *************************/
+	struct list files;		   /* list of files used by the thread */
+	int max_fd;		/* current max file descriptor from list files */
+	
+	/* For wait and execute system calls */
+	struct list child_list;
+	 tid_t parent;
+	
+	/* Pointer for child process */
+   	 struct child_process* cp;
+  /*************************************************************/
   };
+  
+   /* System call helper function */
+bool thread_alive (int pid);
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
@@ -158,18 +152,5 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
-
-
-/* Prototypes for functions that help order our sleeping threads by wake time */
-bool is_greater_priority (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
-bool is_less_wake_time (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED);
-/* Prototypes for functions that help with priority scheduling */
-void update_priority (void);
-void donate_priority (void);
-void check_priority (void);
-
-/* System call helper function */
-bool thread_alive (int pid);
-
 
 #endif /* threads/thread.h */

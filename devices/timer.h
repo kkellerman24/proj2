@@ -26,9 +26,4 @@ void timer_ndelay (int64_t nanoseconds);
 
 void timer_print_stats (void);
 
-// NEW CODE
-/* Prototype for function that awakens threads in order */
-void wake_threads (void);
-// END NEW CODE
-
 #endif /* devices/timer.h */

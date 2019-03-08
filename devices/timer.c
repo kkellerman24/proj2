@@ -20,11 +20,6 @@
 /* Number of timer ticks since OS booted. */
 static int64_t ticks;
 
-// NEW CODE
-/* List that holds sleeping threads, ordered by wake_time */
-static struct list sleep_list;
-// END NEW CODE
-
 /* Number of loops per timer tick.
    Initialized by timer_calibrate(). */
 static unsigned loops_per_tick;
@@ -42,7 +37,6 @@ timer_init (void)
 {
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
-  list_init(&sleep_list);
 }
 
 /* Calibrates loops_per_tick, used to implement brief delays. */
@@ -94,17 +88,12 @@ timer_elapsed (int64_t then)
    be turned on. */
 void
 timer_sleep (int64_t ticks) 
-{  
-  // NEW CODE
-  /* Turn interrupts off temporarily to calculate time and add thread to sleep list */
-  ASSERT (intr_get_level () == INTR_ON);  /* ASSERT if interrupts are currently on */
-  enum intr_level old_level = intr_disable();
-  struct thread *cur = thread_current(); /* Grab current thread */
-  cur->wake_time = timer_ticks() + ticks; /* Setting when to wake up the thread to the total current time + ticks */
-  list_insert_ordered(&sleep_list, &cur->elem, (list_less_func *) &is_less_wake_time, NULL); /* add thread to our sleep list */
-  thread_block(); /* block thread */
-  intr_set_level(old_level);
-  // END NEW CODE
+{
+  int64_t start = timer_ticks ();
+
+  ASSERT (intr_get_level () == INTR_ON);
+  while (timer_elapsed (start) < ticks) 
+    thread_yield ();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -183,33 +172,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
-  
-  // NEW CODE
-  /* Wake up able(defined in wake_thread) sleeping threads */
-  wake_threads();
- // END NEW CODE
 }
-
-// NEW CODE
-/* Index through sleep list and wake up able threads */
-/* Since our sleep list is ordered, we can terminate when our index
-   reaches a wake_time greater than the value of ticks */
-void
-wake_threads(void)
-{
-	struct list_elem *index = list_begin(&sleep_list);
-	while(index != list_end(&sleep_list))
-	{
-		struct thread *t = list_entry(index, struct thread, elem);
-		if (t->wake_time > ticks)
-			break;               		 /* done traversing since our sleep list is in wake time order */
-		list_remove(index);      		 /* remove from sleep list */
-		thread_unblock(t);       		 /* unblock thread so it can be used */
-		index = list_begin(&sleep_list); /* sets index to the beginning of the sleep list */
-	}
-}
-// END NEW CODE
-
 
 /* Returns true if LOOPS iterations waits for more than one timer
    tick, otherwise false. */
@@ -281,4 +244,3 @@ real_time_delay (int64_t num, int32_t denom)
   ASSERT (denom % 1000 == 0);
   busy_wait (loops_per_tick * num / 1000 * TIMER_FREQ / (denom / 1000)); 
 }
-
