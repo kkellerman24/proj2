@@ -443,7 +443,7 @@ void remove_child_processes() {
   cur_elem = list_begin(&cur_thread->child_list);
   while (cur_elem != list_end(&cur_thread->child_list)) {
     next_elem = list_next(cur_elem);
-    struct process *cp = list_entry(cur_elem, struct child_process, elem);
+    struct child_process *cp = list_entry(cur_elem, struct child_process, elem);
     remove_child_process(cp);
     cur_elem = next_elem;
   }
