@@ -215,14 +215,15 @@ thread_create (const char *name, int priority,
   // Add child process to child list
   t->parent = thread_tid(); /* pass thread id */
   struct child_process* cp = malloc(sizeof(struct child_process));
+  cp->pid = t->tid;
+  cp->load = NOT_LOADED;
+  cp->wait = false;
+  cp->exit = false;
+  lock_init(&cp->wait_lock);
+  list_push_back(&thread_current()->child_list, &cp->elem);
   t->cp = cp;  
   
-  //cp->pid = t->tid;
-  //cp->load = NOT_LOADED;
-  //cp->wait = false;
-  //cp->exit = false;
-  //lock_init(&cp->wait_lock);
-  //list_push_back(&thread_current()->child_list, &cp->elem);
+  
   // END NEW CODE
   
   /* Add to run queue. */
