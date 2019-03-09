@@ -384,7 +384,7 @@ struct file* process_get_file (int fd)
 void process_close_file (int fd)
 {
   struct thread *cur_thread = thread_current();
-  struct list_elem *cur_elem, *next_elem = list_begin(&cur_thread->files);
+  struct list_elem *next_elem, *cur_elem = list_begin(&cur_thread->files);
   while (cur_elem != list_end(&cur_thread->files)) {
     next_elem = list_next(cur_elem);
     struct process_file *pf = list_entry(cur_elem, struct process_file, elem);
