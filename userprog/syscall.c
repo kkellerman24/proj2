@@ -103,13 +103,13 @@ syscall_handler (struct intr_frame *f UNUSED)
     }
     case SYS_READ:
     {
-      arg[2] = user_to_kernel_ptr((const void *)arg[2]);           //converts the usr ptr for the buffer to a kernal ptr to be used for reading
+      arg[2] = user_to_kernel_ptr((const void *)arg[2]);           //converts the usr ptr for the buffer to a kernel ptr to be used for reading
       f->eax = read(arg[1], (void *)arg[2], (unsigned)arg[3]);     //passes the file descriptor, buffer and amount of bytes to be read into read()
       break;
     }
     case SYS_WRITE:
     {
-      arg[2] = user_to_kernel_ptr((const void *)arg[2]);               //converts the usr ptr for the buffer to a kernal ptr to be used for writing
+      arg[2] = user_to_kernel_ptr((const void *)arg[2]);               //converts the usr ptr for the buffer to a kernel ptr to be used for writing
       f->eax = write(arg[1], (const void *)arg[2], (unsigned)arg[3]);  //passes the file descriptor, buffer and amount of bytes to be written into write()
       break;
     }
@@ -235,7 +235,7 @@ int filesize (int fd)
    bytes by calling file_read from filesys/file.c. */
 int read (int fd, void *buffer, unsigned size)
 {
-  //what is going on here?????
+  //Standard input buffer
   if (fd == STDIN_FILENO)
 	{
 	  unsigned i;
@@ -332,7 +332,6 @@ void close (int fd)
 /* Converts virtual address vaddr to the address of the
    pointer to the page of the virtual address using the
    pagedir_get_page from userprog/pagedir.c. */
-// Need more help understanding this????????
 int user_to_kernel_ptr(const void *vaddr)
 {
   if (!is_user_vaddr(vaddr))    //if the virtual address is not a user's, exit the thread
@@ -340,13 +339,13 @@ int user_to_kernel_ptr(const void *vaddr)
 	  thread_exit();
 	  return 0;
 	}
-  void *ptr = pagedir_get_page(thread_current()->pagedir, vaddr);   //Otherwise, get the pointer to the kernal virtual address for current thread
-  if (!ptr)   //if we get a null pointer due to vaddr being unmapped, exit the thread
+  void *ptr = pagedir_get_page(thread_current()->pagedir, vaddr);   //Otherwise, get the pointer to the kernel virtual address for current thread
+  if (NULL == ptr)   //if we get a null pointer due to vaddr being unmapped, exit the thread
 	{
 	  thread_exit();
 	  return 0;
 	}
-  return (int) ptr;   //otherwise, return the kernal virtual address corresponding to the physical address
+  return (int) ptr;   //otherwise, return the kernel virtual address corresponding to the "physical address"
 }
 
 /* Gets the current max file descriptor from the current thread,

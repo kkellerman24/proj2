@@ -24,7 +24,7 @@
 
 
 /* File System */
-#define STARTING_FD 2				/* Starting file descriptor number */ //WHY IS THIS 2?????
+#define STARTING_FD 2				/* Starting file descriptor number. 0 and 1 are reserved by standard input and standard output. */
 #define NO_PARENT -1				/* Error value stored for an orphan thread */
 
 
