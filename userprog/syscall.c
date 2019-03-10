@@ -16,6 +16,7 @@
 #include "userprog/process.h"
 
 #define ARG_MAX 4		/* Maximum number of arguments to pass to a system call, including the type of call */
+#define VADDR_BOTTOM ((void *) 0x08048000) // bottom of the v address space
 struct lock file_lock;  /* Lock that prevents multiple files in same file directory from being manipulated at once. */
 // Struct to hold a file, its file descriptor and a list_elem for iteration
 struct process_file {
@@ -31,6 +32,7 @@ int user_to_kernel_ptr(const void *vaddr);
 int process_add_file(struct file *f);
 struct file* process_get_file(int fd);
 void process_close_file(int fd);
+bool is_valid_buffer(void* buffer, unsigned size);
 // END NEW CODE
 
 void
@@ -50,8 +52,12 @@ syscall_handler (struct intr_frame *f UNUSED)
 
   // NEW CODE
   int i, arg[ARG_MAX]; //declare variables used by handler
+  if(!is_valid_ptr(((const void*) f->esp))) // exit with error if not valid pointer
+	  exit(-1);
   for (i = 0; i < ARG_MAX; i++)
   {
+	if(!is_valid_ptr((const void*)((int *) f->esp+i))) // checking each arg for valid ptr
+		exit(-1); // exit with error if not
     arg[i] = *((int *)f->esp + i);  //add arguments to the arg array
   }
   switch (arg[0])   //first arg determines the call to make
@@ -102,12 +108,16 @@ syscall_handler (struct intr_frame *f UNUSED)
     }
     case SYS_READ:
     {
+	  if(!is_valid_buffer((void *) arg[2], (unsigned) arg[3])) // validate buffer
+		  exit(-1);	 
       arg[2] = user_to_kernel_ptr((const void *)arg[2]);           //converts the usr ptr for the buffer to a kernel ptr to be used for reading
       f->eax = read(arg[1], (void *)arg[2], (unsigned)arg[3]);     //passes the file descriptor, buffer and amount of bytes to be read into read()
       break;
     }
     case SYS_WRITE:
     {
+	  if(!is_valid_buffer((void *) arg[2], (unsigned) arg[3])) // validate buffer
+		  exit(-1);	 
       arg[2] = user_to_kernel_ptr((const void *)arg[2]);               //converts the usr ptr for the buffer to a kernel ptr to be used for writing
       f->eax = write(arg[1], (const void *)arg[2], (unsigned)arg[3]);  //passes the file descriptor, buffer and amount of bytes to be written into write()
       break;
@@ -333,7 +343,7 @@ void close (int fd)
    pagedir_get_page from userprog/pagedir.c. */
 int user_to_kernel_ptr(const void *vaddr)
 {
-  if (!is_user_vaddr(vaddr))    //if the virtual address is not a user's, exit the thread
+  if (!is_valid_ptr(vaddr))    //if the virtual address is not a user's, exit the thread
 	{
 	  thread_exit();
 	  return 0;
@@ -341,8 +351,7 @@ int user_to_kernel_ptr(const void *vaddr)
   void *ptr = pagedir_get_page(thread_current()->pagedir, vaddr);   //Otherwise, get the pointer to the kernel virtual address for current thread
   if (NULL == ptr)   //if we get a null pointer due to vaddr being unmapped, exit the thread
 	{
-	  thread_exit();
-	  return 0;
+	  exit(-1); // exiting with error
 	}
   return (int) ptr;   //otherwise, return the kernel virtual address corresponding to the "physical address"
 }
@@ -454,5 +463,30 @@ void remove_child_processes() {
     cur_elem = next_elem;   //continue on the next element
   }
   return;   //return
+}
+
+/* Checks that a v address is valid by seeing if it is
+	a user's and does not exceed the bottom of the v address
+	space. */
+bool is_valid_ptr(const void *vaddr)
+{
+	return (is_user_vaddr(vaddr) && vaddr >= VADDR_BOTTOM);
+}
+
+/* Checks that a buffer with given size is valid by iterating
+	through each element in the buffer and checking if the 
+	element is a valid pointer. If any one of them is not,
+	returns false, otherwise returns true. */
+bool is_valid_buffer(void* buffer, unsigned size)
+{
+	char* loc_buffer = (char *) buffer;
+	for (unsigned i = 0; i < size; i++)
+	{
+		if (!is_valid_ptr((const void *) loc_buffer))
+			return false;
+		else
+			loc_buffer++;
+	}
+	return true;
 }
 // END NEW CODE
