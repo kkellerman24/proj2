@@ -11,24 +11,20 @@
 #include "filesys/directory.h"
 #include "filesys/file.h"
 #include "filesys/filesys.h"
-// NEW CODE
-#include "userprog/syscall.h" //necessary to close opened files
-// END NEW CODE
+#include "userprog/syscall.h" /* necessary to close opened files */
 #include "threads/flags.h"
 #include "threads/init.h"
 #include "threads/interrupt.h"
 #include "threads/palloc.h"
-// NEW CODE ?
 #include "threads/malloc.h"
-// END NEW CODE ?
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
 static thread_func start_process NO_RETURN;
-//static bool load (const char *cmdline, void (**eip) (void), void **esp);
 //NEW CODE
 static bool load (const char *cmdline, void (**eip) (void), void **esp,
 		  char** save_ptr);
+//END NEW CODE
 
 
 /* Starts a new thread running a user program loaded from
@@ -49,15 +45,14 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
 
   //NEW CODE
-  // Get file name
   char *save_ptr;
-  file_name = strtok_r((char *) file_name, " ", &save_ptr);
+  file_name = strtok_r((char *) file_name, " ", &save_ptr); /* Get the file name, strtok_r to return to tokenizing */
   //END NEW CODE
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
-    palloc_free_page (fn_copy); 
+    palloc_free_page (fn_copy); /* Free page if a mistake was made */
   return tid;
 }
 
@@ -68,12 +63,11 @@ start_process (void *file_name_)
 {
   char *file_name = file_name_;
   struct intr_frame if_;
-  bool success; //REMOVE THIS?
+  bool success;
 
   //NEW CODE
-  // Get actual file name (first parsed token)
   char *save_ptr;
-  file_name = strtok_r(file_name, " ", &save_ptr);
+  file_name = strtok_r(file_name, " ", &save_ptr); /* Get actual file name (first parsed token) */
   //END NEW CODE
 
   /* Initialize interrupt frame and load executable. */
@@ -81,19 +75,17 @@ start_process (void *file_name_)
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  //success = load (file_name, &if_.eip, &if_.esp);
   //NEW CODE
-   success = load (file_name, &if_.eip, &if_.esp, &save_ptr);
+   success = load (file_name, &if_.eip, &if_.esp, &save_ptr); 	/* success is set as boolean if the filename is parsed correctly */
    
   if (success)
     {
-      thread_current()->cp->load = LOAD_SUCCESS;// load is LOAD_SUCCESS
+      thread_current()->cp->load = LOAD_SUCCESS;				/* tell the child process that we had a success */
     }
   else
     {
-      thread_current()->cp->load = LOAD_FAIL;// load is LOAD_FAIL
+      thread_current()->cp->load = LOAD_FAIL; 					/* Or tell it we failed */
     }
-  // Unblock parent thread if already blocked
   //END NEW CODE
 
   /* If load failed, quit. */
@@ -123,24 +115,22 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  //return -1;
-  struct child_process* cp = get_child_process(child_tid);
-  if (!cp) /* If we don't have a child process, an error is present */
+  struct child_process* cp = get_child_process(child_tid); /* grab child process */
+  if (!cp) 												   /* If we don't have a child process, an error is present */
     {
       return ERROR;
     }
-  if (cp->wait) /* If the child process struct boolean wait is true, we can't return to exit status */
+  if (cp->wait) 	/* If the child process struct boolean wait is true, we can't return to exit status */
     {
       return ERROR;
     }
   cp->wait = true;
   while (!cp->exit)
     {
-      barrier();//lock_acquire(&cp->wait_lock);
+      barrier(); 	/* Synchronization method for threads */
     }
   int status = cp->status;
-  //remove_child_process(child_tid);
-  remove_child_process(cp);
+  remove_child_process(cp); /* remove child */
   return status;
 }
 
@@ -170,12 +160,11 @@ process_exit (void)
 
   // NEW CODE
   process_close_file(CLOSE_ALL);		/* Closes all files opened by the process */
-  
-  // Free child list
-  remove_child_processes();
-  if (thread_alive(cur->parent)) /* check to see if the current threads parent is alive, if it is, the current thread needs to stay alive */
+ 
+  remove_child_processes();		 		/* Free child list */
+  if (thread_alive(cur->parent)) 		/* check to see if the current threads parent is alive, if it is, the current thread needs to stay alive */
     {
-      cur->cp->exit = true; /* Set exit value to true in case the current thread is killed by the kernel */
+      cur->cp->exit = true; 			/* Set exit value to true in case the current thread is killed by the kernel */
     }
   // END NEW CODE
 }
@@ -188,8 +177,7 @@ process_activate (void)
 {
   struct thread *t = thread_current ();
 
-  /* Activate thread's page tables. */
-  pagedir_activate (t->pagedir);
+  pagedir_activate (t->pagedir); 		/* Activate thread's page tables. */
 
   /* Set thread's kernel stack for use in processing
      interrupts. */
@@ -260,14 +248,14 @@ struct Elf32_Phdr
 #define PF_R 4          /* Readable. */
 
 //NEW CODE
-// Used for setup_stack
+/* Used for setup_stack */
 #define WORD_SIZE 4
-#define DEFAULT_ARGV 2
+#define DEFAULT_ARGV 2 /* Default argument vector of 2 */
 
 static bool setup_stack (void **esp, const char* file_name,
 			 char** save_ptr);
-//static bool setup_stack (void **esp);
 //END NEW CODE
+
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -373,10 +361,9 @@ load (const char *file_name, void (**eip) (void), void **esp,
           break;
         }
     }
-
-  /* Set up stack. */
   //NEW CODE
-    if (!setup_stack(esp, file_name, save_ptr)) //if (!setup_stack (esp))
+  /* Set up stack. */
+    if (!setup_stack(esp, file_name, save_ptr)) /* close the file if the stack isn't set up correctly */
       goto done;
   //END NEW CODE
 
@@ -504,21 +491,6 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (void **esp, const char* file_name, char** save_ptr) 
 {
-  /* //OLD CODE
-  uint8_t *kpage;
-  bool success = false;
-
-  kpage = palloc_get_page (PAL_USER | PAL_ZERO);
-  if (kpage != NULL) 
-    {
-      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
-      if (success)
-        *esp = PHYS_BASE;
-      else
-        palloc_free_page (kpage);
-    }
-  return success;
-  */
   uint8_t *kpage;
   bool success = false;
 
@@ -531,25 +503,25 @@ setup_stack (void **esp, const char* file_name, char** save_ptr)
     else
     {
       palloc_free_page(kpage);
-      return success; //minimal stack implementation as given by pintos
+      return success; /* minimal stack implementation as given by pintos */
     }
   }
   //NEW CODE
-  char *token; //used with string tokenizer, will parse argument by white spaces
-  char **argv = malloc(DEFAULT_ARGV * sizeof(char *)); //allocate memory and hold location
+  char *token; /* used with string tokenizer, will parse argument by white spaces */
+  char **argv = malloc(DEFAULT_ARGV * sizeof(char *)); /* allocate memory and hold location */
   int i;
   int argc = 0;
-  int argv_size = DEFAULT_ARGV; //argv size set to 2
+  int argv_size = DEFAULT_ARGV; /*argv size set to 2 */
 
-  // Push args onto stack
+  /* Push args onto stack */
   /* Iterate through file name until no more tokens are present, strtok_r allows for re-entry to tokenizing location */
   for (token = (char *)file_name; token != NULL; token = strtok_r(NULL, " ", save_ptr))
   {
     *esp -= strlen(token) + 1;
     argv[argc] = *esp; /* argument at argument count location is accepted */
-    argc++; /* increment argument count */
+    argc++; 		   /* increment argument count */
 
-    // Resize argv
+    /* Resize argv */
     /* If we have more than 2 arguments, we'll need to give more space to the argument vector */
     if (argc >= argv_size)
     {
@@ -563,30 +535,27 @@ setup_stack (void **esp, const char* file_name, char** save_ptr)
   i = (size_t)*esp % WORD_SIZE;
   if (i > 0)
   {
-    *esp -= i; //?????
+    *esp -= i; /* user stack grows downward */
     memcpy(*esp, &argv[argc], i);
   }
-  // Push argv[i] for all i
+  /* Push all of the argument vector onto our created stack */
   for (i = argc; i >= 0; i--)
   {
     *esp -= sizeof(char *);
     memcpy(*esp, &argv[i], sizeof(char *));
   }
-  // Push argv
+  /* Push the argument vector onto the stack */
   token = *esp;
   *esp -= sizeof(char **);
   memcpy(*esp, &token, sizeof(char **));
-  // Push argc
+  /* Push argument counter */
   *esp -= sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
-  // Push fake return addr
+  /* Push fake return addr onto the stack */
   *esp -= sizeof(void *);
   memcpy(*esp, &argv[argc], sizeof(void *));
-  // Free argv
+  /* free the argument vector resource */
   free(argv);
-
-  // Use for debugging, but delete later
-  //hex_dump(0, *esp, (int) ((size_t) PHYS_BASE - (size_t) *esp), true);
 
   return success;
   //END NEW CODE

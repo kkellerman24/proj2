@@ -101,21 +101,19 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
 	
-	/*********************** File System *************************/
+	/*********************** Proj 2 - File System ***************/
 	struct list files;		   /* list of files used by the thread */
-	int max_fd;		/* current max file descriptor from list files */
-	
-	/* For wait and execute system calls */
-	struct list child_list;
+	int max_fd;				   /* current max file descriptor from list files */
+						   
+	struct list child_list;	   /* For wait and execute system calls */
 	 tid_t parent;
 	
-	/* Pointer for child process */
-   	 struct child_process* cp;
+   	 struct child_process* cp; /* Pointer for child process */
   /*************************************************************/
   };
   
-   /* System call helper function */
-bool thread_alive (int pid);
+//NEW CODE
+bool thread_alive (int pid); /* System call helper function */
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.

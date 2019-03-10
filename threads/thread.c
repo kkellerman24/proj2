@@ -11,21 +11,14 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
-/* OLD CODE
-#ifdef USERPROG
-#include "userprog/process.h"
+#include "threads/malloc.h" 	/* added for wait/execute implementation */
+#include "userprog/process.h" 	/* Reference process and syscall */
 #include "userprog/syscall.h"
-#endif */
-#include "threads/malloc.h" //added for wait/execute
-//NEW CODE
-#include "userprog/process.h"
-#include "userprog/syscall.h"
-//NEW CODE
 
 
 /* File System */
-#define STARTING_FD 2				/* Starting file descriptor number. 0 and 1 are reserved by standard input and standard output. */
-#define NO_PARENT -1				/* Error value stored for an orphan thread */
+#define STARTING_FD 2			/* Starting file descriptor number. 0 and 1 are reserved by standard input and standard output. */
+#define NO_PARENT -1			/* Error value stored for an orphan thread */
 
 
 /* Random value for struct thread's `magic' member.
@@ -212,18 +205,16 @@ thread_create (const char *name, int priority,
   sf->ebp = 0;
 
   // NEW CODE
-  // Add child process to child list
-  t->parent = thread_tid(); /* pass thread id */
-  struct child_process* cp = malloc(sizeof(struct child_process));
-  cp->pid = t->tid;
-  cp->load = NOT_LOADED;
+  /* Add child process to child list */
+  t->parent = thread_tid(); 										/* pass thread id */ 
+  struct child_process* cp = malloc(sizeof(struct child_process));  /* space for child process */
+  cp->pid = t->tid; 												/* child process id is set to current threads id */
+  cp->load = NOT_LOADED; 											/* initialization of booleans */
   cp->wait = false;
   cp->exit = false;
-  lock_init(&cp->wait_lock);
-  list_push_back(&thread_current()->child_list, &cp->elem);
+  lock_init(&cp->wait_lock); 										/* initialize child process lock */
+  list_push_back(&thread_current()->child_list, &cp->elem);			/* add current thread to child list */
   t->cp = cp;  
-  
-  
   // END NEW CODE
   
   /* Add to run queue. */
@@ -496,13 +487,13 @@ init_thread (struct thread *t, const char *name, int priority)
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
   
+  //NEW CODE
   /* initializing file system members */
   list_init(&t->files);
-  t->max_fd = STARTING_FD;
+  t->max_fd = STARTING_FD; /* set the thread max file descriptor to the standard 2 */
   
   /* adding support for wait/execute */
   list_init(&t->child_list);
-  //t->parent = thread_current()->tid;
   t->cp = NULL;
   t->parent = NO_PARENT;
   //END NEW CODE
@@ -621,8 +612,9 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
-
+//NEW CODE
 /* Inspired by RyanTim Wilson, helper function to see if a thread has been terminated */
+/* Called in syscall and process to see if a current thread's parent has been terminated */
 bool thread_alive (int pid)
 {
   struct list_elem *e; /* element used to iterate */
@@ -632,8 +624,9 @@ bool thread_alive (int pid)
       struct thread *t = list_entry (e, struct thread, allelem);
       if (t->tid == pid) /* if the thread id is equal to the process id, a thread is alive */
 		{
-	  return true;
+			return true;
 		}
     }
   return false;
 }
+//END NEW CODE 
