@@ -160,7 +160,7 @@ process_exit (void)
 
   // NEW CODE
   process_close_file(CLOSE_ALL);		/* Closes all files opened by the process */
- 
+  file_close(cur->self); 				/* Closes its own file */
   remove_child_processes();		 		/* Free child list */
   if (thread_alive(cur->parent)) 		/* check to see if the current threads parent is alive, if it is, the current thread needs to stay alive */
     {
@@ -275,7 +275,8 @@ load (const char *file_name, void (**eip) (void), void **esp,
   off_t file_ofs;
   bool success = false;
   int i;
-
+  
+  lock_acquire(&file_lock); // prevent multiple access
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
   if (t->pagedir == NULL) 
@@ -371,10 +372,16 @@ load (const char *file_name, void (**eip) (void), void **esp,
     *eip = (void (*)(void))ehdr.e_entry;
 
     success = true;
+	
+	// NEW CODE - deny writes to executable
+	file_deny_write(file);
+	thread_current()->self = file; // keep track of its own file
+	// END NEW CODE
 
  done:
   /* We arrive here whether the load is successful or not. */
-  file_close (file);
+  // file_close (file);
+  lock_release(&file_lock);
   return success;
 }
 
