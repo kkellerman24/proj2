@@ -109,6 +109,8 @@ struct thread
 	 tid_t parent;
 	
    	 struct child_process* cp; /* Pointer for child process */
+	 
+	 struct file *self; /* pointer to keep track of which file the thread is from
   /*************************************************************/
   };
   

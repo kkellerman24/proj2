@@ -496,6 +496,7 @@ init_thread (struct thread *t, const char *name, int priority)
   list_init(&t->child_list);
   t->cp = NULL;
   t->parent = NO_PARENT;
+  t->self = NULL; /* initialize the self file variable */
   //END NEW CODE
 }
 
