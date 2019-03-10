@@ -345,8 +345,7 @@ int user_to_kernel_ptr(const void *vaddr)
 {
   if (!is_valid_ptr(vaddr))    //if the virtual address is not a user's, exit the thread
 	{
-	  thread_exit();
-	  return 0;
+	  exit(-1); // exiting with error
 	}
   void *ptr = pagedir_get_page(thread_current()->pagedir, vaddr);   //Otherwise, get the pointer to the kernel virtual address for current thread
   if (NULL == ptr)   //if we get a null pointer due to vaddr being unmapped, exit the thread
