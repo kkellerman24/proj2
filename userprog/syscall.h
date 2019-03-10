@@ -13,7 +13,7 @@
 #define LOAD_FAIL -1
 //Child Process Structure
 struct child_process {
-  int pid;    //parent id
+  int pid;    //process id
   int load;   //load status
   bool wait;  //whether the process is waiting
   bool exit;  //whether the process has exited
