@@ -26,6 +26,8 @@ struct child_process* add_child_process(int pid);
 void remove_child_process(struct child_process *cp);
 void remove_child_processes(void);
 /***********************/
+struct lock file_lock;  /* Lock that prevents multiple files in same file directory from being manipulated at once. */
+
 void process_close_file(int fd);  /* passes the file number of the file to be closed */ 
 bool is_valid_ptr(const void *vaddr); // determines if vaddress is valid
 // END NEW CODE

@@ -17,7 +17,6 @@
 
 #define ARG_MAX 4		/* Maximum number of arguments to pass to a system call, including the type of call */
 #define VADDR_BOTTOM ((void *) 0x08048000) // bottom of the v address space
-struct lock file_lock;  /* Lock that prevents multiple files in same file directory from being manipulated at once. */
 // Struct to hold a file, its file descriptor and a list_elem for iteration
 struct process_file {
   struct file *file;
